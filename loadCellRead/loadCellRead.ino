@@ -24,27 +24,70 @@
 
 #include "HX711.h"
 
-#define calibration_factor -7050.0 //This value is obtained using the SparkFun_HX711_Calibration sketch
+//This value is obtained using the SparkFun_HX711_Calibration sketch
+#define calibration_factor -6850.0
 
-#define DOUT  3
-#define CLK  2
+#define CLK_FL  6
+#define DOUT_FL  7
+#define CLK_FR  2
+#define DOUT_FR  3
+#define CLK_BL  8
+#define DOUT_BL  9
+#define CLK_BR  4
+#define DOUT_BR  5
 
-HX711 scale(DOUT, CLK);
+#define readFrontLeft 'A'
+#define readFrontRight 'B'
+#define readBackLeft 'C'
+#define readBackRight 'D'
+
+HX711 frontLeft(DOUT_FL, CLK_FL);
+HX711 frontRight(DOUT_FR, CLK_FR);
+HX711 backLeft(DOUT_BL, CLK_BL);
+HX711 backRight(DOUT_BR, CLK_BR);
 
 void setup() {
   Serial.begin(9600);
-  //Serial.println("HX711 scale demo");
+  Serial.println('a');
+  char a = 'b';
+  while (a != 'a') {
+    a = Serial.read();
+  }
 
-  scale.set_scale(calibration_factor); //This value is obtained by using the SparkFun_HX711_Calibration sketch
-  scale.tare(); //Assuming there is no weight on the scale at start up, reset the scale to 0
-
-  //Serial.println("Readings:");
+  // Calibrate and zero feet
+  frontLeft.set_scale(calibration_factor);
+  frontLeft.tare();
+  frontRight.set_scale(calibration_factor);
+  frontRight.tare();
+  backLeft.set_scale(calibration_factor);
+  backLeft.tare();
+  backRight.set_scale(calibration_factor);
+  backRight.tare();
 }
 
 void loop() {
+  // Wait for data from serial port
+  while (Serial.available() == 0) {
+  }
+  
+  if (Serial.available() > 0) {
+    int mode = Serial.read();
+    if (mode == readFrontLeft) {
+      Serial.println(frontLeft.get_units(), 1); //scale.get_units() returns a float
+    } else if (mode == readFrontRight) {
+      Serial.println(frontRight.get_units(), 1);
+      // TEMPORARY WEIGHT FOR VISUALIZATION
+    } else if (mode == readBackLeft) {
+      Serial.println(backLeft.get_units(), 1);
+    } else if (mode == readBackRight) {
+      Serial.println(backRight.get_units(), 1);
+    }
+  }
+  delay(20);
+  
   //Serial.print("Reading: ");
-  Serial.print(scale.get_units(), 1); //scale.get_units() returns a float
+  //Serial.println(scale.get_units(), 1); //scale.get_units() returns a float
   //Serial.print(" lbs"); //You can change this to kg but you'll need to refactor the calibration_factor
-  Serial.println();
+  //Serial.println();
 }
 
