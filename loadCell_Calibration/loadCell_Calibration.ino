@@ -33,12 +33,21 @@
 
 #include "HX711.h"
 
-#define DOUT  5
-#define CLK  4
+#define CLK_FL  4
+#define DOUT_FL  5
+#define CLK_FR  8
+#define DOUT_FR  9
+#define CLK_BL  2
+#define DOUT_BL  3
+#define CLK_BR  6
+#define DOUT_BR  7
 
-HX711 scale(DOUT, CLK);
+HX711 frontLeft(DOUT_FL, CLK_FL);
+HX711 frontRight(DOUT_FR, CLK_FR);
+HX711 backLeft(DOUT_BL, CLK_BL);
+HX711 backRight(DOUT_BR, CLK_BR);
 
-float calibration_factor = -6850; //-7050 worked for my 440lb max scale setup
+float calibration_factor = -6000;
 
 void setup() {
   Serial.begin(9600);
@@ -48,20 +57,32 @@ void setup() {
   Serial.println("Press + or a to increase calibration factor");
   Serial.println("Press - or z to decrease calibration factor");
 
-  scale.set_scale();
-  scale.tare(); //Reset the scale to 0
+  // Calibrate and zero feet
+  frontLeft.set_scale(calibration_factor);
+  frontLeft.tare();
+  frontRight.set_scale(calibration_factor);
+  frontRight.tare();
+  backLeft.set_scale(calibration_factor);
+  backLeft.tare();
+  backRight.set_scale(calibration_factor);
+  backRight.tare();
 
-  long zero_factor = scale.read_average(); //Get a baseline reading
-  Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
-  Serial.println(zero_factor);
+  //long zero_factor = scale.read_average(); //Get a baseline reading
+  //Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
+  //Serial.println(zero_factor);
 }
 
 void loop() {
 
-  scale.set_scale(calibration_factor); //Adjust to this calibration factor
+  frontLeft.set_scale(calibration_factor); //Adjust to this calibration factor
+  frontRight.set_scale(calibration_factor);
+  backLeft.set_scale(calibration_factor);
+  backRight.set_scale(calibration_factor);
 
   Serial.print("Reading: ");
-  Serial.print(scale.get_units(), 1);
+  float totalWeight = frontLeft.get_units() + frontRight.get_units() + 
+      backLeft.get_units() + backRight.get_units();
+  Serial.print(totalWeight, 1);
   Serial.print(" lbs"); //Change this to kg and re-adjust the calibration factor if you follow SI units like a sane person
   Serial.print(" calibration_factor: ");
   Serial.print(calibration_factor);

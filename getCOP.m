@@ -1,32 +1,35 @@
 function [copX, copY] = getCOP(arduino)
 
-global boardWidth boardHeight
-readFrontLeft = 'A';
-readFrontRight = 'B';
-readBackLeft = 'C';
-readBackRight = 'D';
+global boardWidth boardHeight READ_COP
+
+% Send read request for COP to arduino
+fprintf(arduino, READ_COP);
+
+% Readings sent back to MATLAB in following order: FL, FR, BL, BR
 
 % Get reading from front left foot
-frontLeft = getFootReading(arduino, readFrontLeft);
-%     s = sprintf('Reading: %.1f lbs', frontLeft);
-%     disp(s);
+frontLeft = fscanf(arduino, '%f');
+% s = sprintf('Reading: %.1f lbs', frontLeft);
+% disp(s);
 
 % Get reading from front right foot
-frontRight = getFootReading(arduino, readFrontRight);
-%     s = sprintf('Reading: %.1f lbs', frontRight);
-%     disp(s);
+frontRight = fscanf(arduino, '%f');
+% s = sprintf('Reading: %.1f lbs', frontRight);
+% disp(s);
 
 % Get reading from back left foot
-backLeft = getFootReading(arduino, readBackLeft);
-%      s = sprintf('Reading: %.1f lbs', backLeft);
-%      disp(s);
+backLeft = fscanf(arduino, '%f');
+% s = sprintf('Reading: %.1f lbs', backLeft);
+% disp(s);
 
 % Get reading from back right foot
-backRight = getFootReading(arduino, readBackRight);
-%      s = sprintf('Reading: %.1f lbs', backRight);
-%      disp(s);
+backRight = fscanf(arduino, '%f');
+% s = sprintf('Reading: %.1f lbs', backRight);
+% disp(s);
 
 totalWeight = frontLeft + frontRight + backLeft + backRight;
+%s = sprintf('Reading: %.1f lbs', totalWeight);
+%disp(s);
 
 if (totalWeight <= .5)
     copX = 0;
