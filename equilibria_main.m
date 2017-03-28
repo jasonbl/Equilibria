@@ -2,7 +2,8 @@ clear;
 clc;
 
 global boardWidth boardHeight READ_COP READ_TILT SET_VELOCITY SET_DIRECTION...
-    copPlotHandle modeIsStarted modeSelected percentSpeed maxTilt
+    copPlotHandle modeIsStarted modeSelected percentSpeed maxTilt ...
+    readArduino actArduino UP DOWN OFF ACTUATOR_ONE ACTUATOR_TWO
 
 boardWidth = .433; % distance (width) between strain gauges (m)
 boardHeight = .238; % distance ((height) between strain gauges (m)
@@ -11,7 +12,7 @@ READ_TILT = 'T';
 SET_VELOCITY = 'V';
 SET_DIRECTION = 'D';
 modeIsStarted = false; % initially no mode has begun
-modeSelected = 'ADAPTIVE'; % initial mode
+modeSelected = 'OFF'; % initially turn selected mode to off
 percentSpeed = 0; % initial speed
 maxTilt = 0; % initial max tilt
 OFF = '0';
@@ -30,17 +31,16 @@ actComPort = '/dev/cu.usbmodem1451';
 seniordesignboard();
 axes(copPlotHandle);
 
-% % Set velocity for actuators
-% % fprintf(actArduino, SET_VELOCITY);
-% % fprintf(actArduino, 128);
-% % disp(fscanf(actArduino, '%f'));
+% Set initial percent speed of actuators to 0
+setSpeed(0);
 
 % Read data from Wii Board
 firstTime = true;
 while ~strcmp(modeSelected, 'QUIT')
     %timerVal = tic;
-    [pitch, roll] = getTilt(readArduino);
-    [copX, copY] = getCOP(readArduino);
+    [currentPitch, currentRoll] = getTilt();
+    % NOTE: THE WAY THE ACCELEROMETER IS MOUNTED
+    [copX, copY] = getCOP();
     %toc(timerVal);
     
     % If this is the first time we're drawing the wiiScreen, create a
@@ -52,53 +52,58 @@ while ~strcmp(modeSelected, 'QUIT')
     end
     
     if strcmp(modeSelected, 'REACTIVE')
-        % SET SPEED
-        % SET MAX TILT
+        % DIFFICULTY SETTINGS - display circle on board?
         
-          % Actuator control
+        % Actuator one control, controls roll
         if (abs(copX) > .125 * boardWidth)
-            fprintf(actArduino, SET_DIRECTION);
-            % Actuator to control
-            fprintf(actArduino, ACTUATOR_ONE);
-
+            % Postive roll, actuator up
             if (copX > 0)
-                % Direction to move actuator
-                fprintf(actArduino, UP); % UP
+                if (currentRoll < maxTilt)
+                    setActuatorDirection(ACTUATOR_ONE, UP);
+                else
+                    setActuatorDirection(ACTUATOR_ONE, OFF);
+                end
             else
-                % Direction to move actuator
-                fprintf(actArduino, DOWN); % DOWN
+                if (currentRoll > -maxTilt)
+                    setActuatorDirection(ACTUATOR_ONE, DOWN);
+                else
+                    setActuatorDirection(ACTUATOR_ONE, OFF);
+                end
             end
         else
-            fprintf(actArduino, SET_DIRECTION);
-            % Actuator to control
-            fprintf(actArduino, ACTUATOR_ONE);
-            % disp(fscanf(actArduino, '%d'));
-            % Actuator OFF
-            fprintf(actArduino, OFF);
-            % disp(fscanf(actArduino, '%d'));
+            % Stop moving actuatorOne
+            setActuatorDirection(ACTUATOR_ONE, OFF);
         end
 
+        % Actuator two control, controls pitch
         if (abs(copY) > .125 * boardHeight)
-            fprintf(actArduino, SET_DIRECTION);
-            % Actuator to control
-            fprintf(actArduino, ACTUATOR_TWO);
-
+            % Postive pitch, actuator up
             if (copY > 0)
-                % Direction to move actuator
-                fprintf(actArduino, UP); % UP
+                if (currentPitch < maxTilt)
+                    setActuatorDirection(ACTUATOR_TWO, UP);
+                else
+                    setActuatorDirection(ACTUATOR_TWO, OFF);
+                end
             else
-                % Direction to move actuator
-                fprintf(actArduino, DOWN); % DOWN
+                if (currentPitch > -maxTilt)
+                    setActuatorDirection(ACTUATOR_TWO, DOWN);
+                else
+                    setActuatorDirection(ACTUATOR_TWO, OFF);
+                end
             end
         else
-            fprintf(actArduino, SET_DIRECTION);
-            % Actuator to control
-            fprintf(actArduino, ACTUATOR_TWO);
-            % Actuator OFF
-            fprintf(actArduino, OFF);
+            % Stop moving actuatorTwo
+            setActuatorDirection(ACTUATOR_TWO, OFF);
         end
     elseif strcmp(modeSelected, 'ADAPTIVE')
+        
     elseif strcmp(modeSelected, 'LEVEL_BOARD')
+        % Takes in arguments: desiredPitch, desiredRoll, currentPitch,
+        % currentRoll
+        tiltIsSet = setTilt(0, 0, currentPitch, currentRoll);
+        if tiltIsSet
+            modeSelected = 'OFF';
+        end
     end
     
     % Redraw the COP Plot

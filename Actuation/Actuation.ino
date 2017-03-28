@@ -10,6 +10,7 @@
 
 #define SET_VELOCITY 'V'
 #define SET_DIRECTION 'D'
+#define MAX_VELOCITY 255
 
 int oneVelocity; // Velocity for actuator one (Note: 255 Maximum value of for analogWrite)
 int twoVelocity; // Velocity for actuator two (Note: 255 Maximum value of for analogWrite)
@@ -29,10 +30,10 @@ void setup() {
   pinMode(12, OUTPUT); // Actuator 2: set high to move up
   pinMode(10, OUTPUT); // Actuator 2: velocity control
 
-  // Set initial velocities of actuators //////// CHANGE LATER ////////
-  oneVelocity = 128;
-  twoVelocity = 128;
-  ramp(oneVelocity);
+//  // Set initial velocities of actuators //////// CHANGE LATER ////////
+//  oneVelocity = 128;
+//  twoVelocity = 128;
+//  ramp(oneVelocity);
 }
 
 void loop() {
@@ -43,13 +44,21 @@ void loop() {
     int mode = Serial.read();
 
     if (mode == SET_VELOCITY) {
+      //Serial.println("Mode = SET_VELOCITY");
       while (Serial.available() == 0) {}
-      int velocity = Serial.read(); /////// FIX THIS ////////
+      Serial.read(); // REMOVE NEW LINE CHARACTER
+            
+      while (Serial.available() == 0) {}
+      int percentVelocity = (int) Serial.read();
+      //Serial.println((char) percentVelocity);
+      int velocity = percentVelocity / 100.0 * MAX_VELOCITY;
+      //Serial.println(velocity);
       ramp(velocity);
     } else if (mode == SET_DIRECTION) {
       while (Serial.available() == 0) {}
       Serial.read(); // REMOVE NEW LINE CHARACTER
-      while(Serial.available() == 0) {}
+      
+      while (Serial.available() == 0) {}
       int actuator = Serial.read();
       //Serial.println(actuator);
       
@@ -99,7 +108,7 @@ void setDirection(int actuator, int dir) {
 
 void ramp(int velocity) {
   // Make sure velocity is in the correct range
-  if (velocity > 255) {
+  if (velocity > MAX_VELOCITY) {
     velocity = 255;  
   } else if (velocity < 0) {
     velocity = 0;  
@@ -107,12 +116,12 @@ void ramp(int velocity) {
 
   // Ramp velocity of first actuator to correct value
   if (velocity > oneVelocity) {
-    for (oneVelocity; oneVelocity <= velocity; oneVelocity++) {
+    for (oneVelocity; oneVelocity < velocity; oneVelocity++) {
       analogWrite(3, oneVelocity);
       delay(2);
     }
   } else {
-    for (oneVelocity; oneVelocity >= velocity; oneVelocity--) {
+    for (oneVelocity; oneVelocity > velocity; oneVelocity--) {
       analogWrite(3, oneVelocity);
       delay(2);
     }
@@ -120,12 +129,12 @@ void ramp(int velocity) {
 
   // Ramp velocity of second actuator to correct value
   if (velocity > twoVelocity) {
-    for (twoVelocity; twoVelocity <= velocity; twoVelocity++) {
+    for (twoVelocity; twoVelocity < velocity; twoVelocity++) {
       analogWrite(10, twoVelocity);
       delay(2);
     }
   } else {
-    for (twoVelocity; twoVelocity >= velocity; twoVelocity--) {
+    for (twoVelocity; twoVelocity > velocity; twoVelocity--) {
       analogWrite(10, twoVelocity);
       delay(2);
     }

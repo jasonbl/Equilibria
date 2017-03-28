@@ -131,6 +131,9 @@ if ~modeIsStarted
     percentSpeed = input1;
     maxTilt = input2;
     
+    % Set new speed of actuators
+    setSpeed(percentSpeed);
+    
     if strcmp(selection, 'reactiveButton')
         modeSelected = 'REACTIVE';
     elseif strcmp(selection, 'adaptiveButton')
@@ -159,6 +162,7 @@ if modeIsStarted
     msgbox('Error: the board cannot be leveled while a mode is in progress', ...
         'Levelling Error');
 else
+    setSpeed(50); % Set speed to 50%
     modeSelected = 'LEVEL_BOARD';
 end
 

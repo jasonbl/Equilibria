@@ -1,15 +1,15 @@
-function [pitch, roll] = getTilt(arduino)
+function [pitch, roll] = getTilt()
 
-global READ_TILT
+global READ_TILT readArduino
 
 % Send read request for tilt angles to arduino
-fprintf(arduino, READ_TILT);
+fprintf(readArduino, READ_TILT);
 
-pitch = fscanf(arduino, '%f');
-roll = fscanf(arduino, '%f');
+pitch = fscanf(readArduino, '%f');
+roll = fscanf(readArduino, '%f');
 
-%s = sprintf('Pitch = %.1f ::: Roll = %.1f', pitch, roll);
-%disp(s);
+s = sprintf('Pitch = %.1f ::: Roll = %.1f', pitch, roll);
+disp(s);
 
 end
 

@@ -1,29 +1,29 @@
-function [copX, copY] = getCOP(arduino)
+function [copX, copY] = getCOP()
 
-global boardWidth boardHeight READ_COP
+global boardWidth boardHeight READ_COP readArduino
 
 % Send read request for COP to arduino
-fprintf(arduino, READ_COP);
+fprintf(readArduino, READ_COP);
 
 % Readings sent back to MATLAB in following order: FL, FR, BL, BR
 
 % Get reading from front left foot
-frontLeft = fscanf(arduino, '%f');
+frontLeft = fscanf(readArduino, '%f');
 % s = sprintf('Reading: %.1f lbs', frontLeft);
 % disp(s);
 
 % Get reading from front right foot
-frontRight = fscanf(arduino, '%f');
+frontRight = fscanf(readArduino, '%f');
 % s = sprintf('Reading: %.1f lbs', frontRight);
 % disp(s);
 
 % Get reading from back left foot
-backLeft = fscanf(arduino, '%f');
+backLeft = fscanf(readArduino, '%f');
 % s = sprintf('Reading: %.1f lbs', backLeft);
 % disp(s);
 
 % Get reading from back right foot
-backRight = fscanf(arduino, '%f');
+backRight = fscanf(readArduino, '%f');
 % s = sprintf('Reading: %.1f lbs', backRight);
 % disp(s);
 
