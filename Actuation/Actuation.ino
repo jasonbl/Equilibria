@@ -23,6 +23,8 @@ void setup() {
     a = Serial.read();
   }
 
+  // Actuator 1: Controls pitch
+  // Actuator 2: Controls roll
   pinMode(2, OUTPUT); // Actuator 1: set high to move down
   pinMode(4, OUTPUT); // Actuator 1: set high to move up
   pinMode(3, OUTPUT); // Actuator 1: velocity control

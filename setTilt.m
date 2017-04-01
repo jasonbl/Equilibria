@@ -2,7 +2,7 @@ function tiltIsSet = setTilt(desiredPitch, desiredRoll, currentPitch, currentRol
 
 global ACTUATOR_ONE ACTUATOR_TWO OFF UP DOWN
 
-delta = 1; % Variable to establish range of OK tilts board can be in
+delta = 2; % Variable to establish range of OK tilts board can be in
 
 % Check if roll needs to be altered (controlled by actuator one)
 rollIsSet = false;

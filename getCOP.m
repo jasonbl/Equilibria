@@ -28,8 +28,8 @@ backRight = fscanf(readArduino, '%f');
 % disp(s);
 
 totalWeight = frontLeft + frontRight + backLeft + backRight;
-%s = sprintf('Reading: %.1f lbs', totalWeight);
-%disp(s);
+% s = sprintf('Reading: %.1f lbs', totalWeight);
+% disp(s);
 
 if (totalWeight <= .5)
     copX = 0;

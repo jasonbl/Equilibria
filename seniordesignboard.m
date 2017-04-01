@@ -98,7 +98,7 @@ function start_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-global modeSelected modeIsStarted percentSpeed maxTilt
+global modeSelected modeIsStarted percentSpeed maxTilt adaptiveFirstTime
 
 if ~modeIsStarted
     h = get(handles.modeSelectionButtonGroup, 'SelectedObject');
@@ -138,6 +138,7 @@ if ~modeIsStarted
         modeSelected = 'REACTIVE';
     elseif strcmp(selection, 'adaptiveButton')
         modeSelected = 'ADAPTIVE';
+        adaptiveFirstTime = true;
     end
     set(handles.start, 'String', 'Stop');
     set(handles.start, 'BackgroundColor', 'red');
@@ -155,7 +156,7 @@ function levelBoard_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-global modeSelected modeIsStarted
+global modeSelected modeIsStarted settingTilt
 
 if modeIsStarted
     % Tell user that board can't be leveled while mode is in progress
@@ -163,6 +164,7 @@ if modeIsStarted
         'Levelling Error');
 else
     setSpeed(50); % Set speed to 50%
+    settingTilt = true;
     modeSelected = 'LEVEL_BOARD';
 end
 
