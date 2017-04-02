@@ -132,9 +132,9 @@ while ~strcmp(modeSelected, 'QUIT')
             end
         else
             % If user is in OK zone, begin to level board
-            setTilt(0, 0, currentPitch, currentRoll);
-            %setActuatorDirection(ACTUATOR_ONE, OFF);
-            %setActuatorDirection(ACTUATOR_TWO, OFF);
+            %setTilt(0, 0, currentPitch, currentRoll);
+            setActuatorDirection(ACTUATOR_ONE, OFF);
+            setActuatorDirection(ACTUATOR_TWO, OFF);
         end
     elseif strcmp(modeSelected, 'ADAPTIVE')
         % Continuously add to variances

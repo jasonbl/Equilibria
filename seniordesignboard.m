@@ -127,37 +127,40 @@ if ~modeIsStarted
     defaultans = {sprintf('%d', percentSpeed), sprintf('%d', maxTilt)};
     answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
     
-    % Check for invalid inputs
-    input1 = floor(str2double(answer{1}));
-    input2 = floor(str2double(answer{2}));
-    if (input1 < 25 || input1 > 100)
-        msgbox('Invalid speed input. Please input an integer between 25 and 100', ...
-            'Invalid Speed');
-        return;
+    % Make sure user didn't hit cancel button
+    if size(answer) ~= 0
+        % Check for invalid inputs
+        input1 = floor(str2double(answer{1}));
+        input2 = floor(str2double(answer{2}));
+        if (input1 < 25 || input1 > 100)
+            msgbox('Invalid speed input. Please input an integer between 25 and 100', ...
+                'Invalid Speed');
+            return;
+        end
+        if (input2 < 0 || input2 > 15)
+            msgbox('Invalid tilt angle input. Please input an integer between 0 and 15', ...
+                'Invalid Tilt');
+            return;
+        end
+        
+        % Set global variables
+        percentSpeed = input1;
+        maxTilt = input2;
+        
+        % Set new speed of actuators
+        setSpeed(percentSpeed);
+        setAngleDelta(percentSpeed);
+        
+        if strcmp(selection, 'reactiveButton')
+            modeSelected = 'REACTIVE';
+        elseif strcmp(selection, 'adaptiveButton')
+            modeSelected = 'ADAPTIVE';
+            adaptiveFirstTime = true;
+        end
+        set(handles.start, 'String', 'Stop');
+        set(handles.start, 'BackgroundColor', 'red');
+        modeIsStarted = true;
     end
-    if (input2 < 0 || input2 > 15)
-        msgbox('Invalid tilt angle input. Please input an integer between 0 and 15', ...
-            'Invalid Tilt');
-        return;
-    end
-    
-    % Set global variables
-    percentSpeed = input1;
-    maxTilt = input2;
-    
-    % Set new speed of actuators
-    setSpeed(percentSpeed);
-    setAngleDelta(percentSpeed);
-    
-    if strcmp(selection, 'reactiveButton')
-        modeSelected = 'REACTIVE';
-    elseif strcmp(selection, 'adaptiveButton')
-        modeSelected = 'ADAPTIVE';
-        adaptiveFirstTime = true;
-    end
-    set(handles.start, 'String', 'Stop');
-    set(handles.start, 'BackgroundColor', 'red');
-    modeIsStarted = true;
 else
     modeSelected = 'OFF';
     setActuatorDirection(ACTUATOR_ONE, OFF);
@@ -230,14 +233,20 @@ function aboutEquilibria_Callback(hObject, eventdata, handles)
 % hObject    handle to aboutEquilibria (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-msgbox('FILL ME IN', 'About Equilibria');
+msgbox(sprintf('%s\n\n%s', 'Equilibria is a smart standing balance training system designed for children with cerebral palsy. The device consists of a plate that has the ability to tilt in two degrees of freedom at constant speeds and maximum tilt angles that can be set by a physical therapist. It can support up to 100 lbs. The board is intended to improve the balance of children with cerebral palsy while also building muscle strength and developing faster reaction times.', ...
+    'The device was developed from 2016-2017 at the University of Pennsylvania by Justin Averback, Jason Bleiweiss, Ashley Collimore, Lisa Sesink-Clee,  Meredith Spann, and Ni Yang as part of their capstone engineering project.'), 'About Equilibria');
+
 
 % --------------------------------------------------------------------
 function stabilityIndex_Callback(hObject, eventdata, handles)
 % hObject    handle to stabilityIndex (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-msgbox('FILL ME IN', 'Stability Index');
+msgbox(sprintf('%s\n\n%s\n\n%s\n\n%s\n\n%s\n%s','All stability indices are based on the calculations of similar indices for the BIODEX Balance System SD.',...
+    'Anterior/Posterior Stability Index (APSI): The root mean square of center of pressure variance along the Y axis. A high APSI score may be indicative of poor neuromuscular control of the quadriceps and/or hamstring muscles and the anterior/posterior compartment muscles of the lower leg.',...
+    'Medial/Lateral Stability Index (MLSI): The root mean square of center of pressure variance along the X axis. A high MLSI score may be indicative of poor neuromuscular control of the inversion or eversion muscles of the lower leg, both bilaterally and unilaterally.',...
+    'Overall Stability Index (OSI): A composite of the APSI and MLSI scores, sensitive to center of pressure variance in both the X and Y axes.',...
+    'Source:', 'Rohleder, Peter Alexander. "Validation of Balance Assessment Measures of an Accelerometric Mobile Device Application Versus a Balance Platform." Thesis. Wichita State University, 2012. Print.'), 'Stability Index');
 
 
 % --- Executes on button press in decreaseZoneSize.
