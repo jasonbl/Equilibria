@@ -4,7 +4,9 @@ clc;
 global boardWidth boardHeight READ_COP READ_TILT SET_VELOCITY SET_DIRECTION...
     copPlotHandle modeIsStarted modeSelected percentSpeed maxTilt ...
     readArduino actArduino UP DOWN OFF ACTUATOR_ONE ACTUATOR_TWO ...
-    adaptiveFirstTime settingTilt
+    adaptiveFirstTime settingTilt copXField copYField pitchField...
+    rollField weightField copXVariance copYVariance numSamples angleDelta...
+    zoneRadius zoneHandle
 
 boardWidth = .433; % distance (width) between strain gauges (m)
 boardHeight = .238; % distance ((height) between strain gauges (m)
@@ -21,7 +23,8 @@ UP = '1';
 DOWN = '2';
 ACTUATOR_ONE = '1';
 ACTUATOR_TWO = '2';
-zoneRadius = .03; % Length of side of OK zone
+angleDelta = 0;
+zoneRadius = .03; % initial radius of OK zone
 
 % Initialize serial communication with both arduinos
 readComPort = '/dev/cu.usbmodem1411';
@@ -43,8 +46,15 @@ timerRunning = false;
 while ~strcmp(modeSelected, 'QUIT')
     %timerVal = tic;
     [currentPitch, currentRoll] = getTilt();
-    [copX, copY] = getCOP();
+    [copX, copY, totalWeight] = getCOP();
     %toc(timerVal);
+    
+    % Set readings in GUI
+    set(copXField, 'String', sprintf('%.1f cm', 100 * copX));
+    set(copYField, 'String', sprintf('%.1f cm', 100 * copY));
+    set(pitchField, 'String', sprintf('%.0f degrees', currentPitch));
+    set(rollField, 'String', sprintf('%.0f degrees', currentRoll));
+    set(weightField, 'String', sprintf('%.1f lbs', totalWeight));
     
     % If this is the first time we're drawing the wiiScreen, create a
     % handle for the screen
@@ -84,18 +94,22 @@ while ~strcmp(modeSelected, 'QUIT')
     end
     
     if strcmp(modeSelected, 'REACTIVE')
+        % Continuously add to variances
+        copXVariance = copXVariance + (100 * copX * 100 * copX);
+        copYVariance = copYVariance + (100 * copY * 100 * copY);
+        numSamples = numSamples + 1;
         
         % Check if center of pressure is outside of OK zone
         if (distanceFromCenter > zoneRadius)
             % Actuator one controls roll, positive roll = actuator up
             if (copX > 0)
-                if (currentRoll < maxTilt)
+                if (currentRoll < maxTilt - angleDelta)
                     setActuatorDirection(ACTUATOR_ONE, UP);
                 else
                     setActuatorDirection(ACTUATOR_ONE, OFF);
                 end
             else
-                if (currentRoll > -maxTilt)
+                if (currentRoll > -maxTilt + angleDelta)
                     setActuatorDirection(ACTUATOR_ONE, DOWN);
                 else
                     setActuatorDirection(ACTUATOR_ONE, OFF);
@@ -104,13 +118,13 @@ while ~strcmp(modeSelected, 'QUIT')
             
             % Actuator two controls pitch, positive pitch = actuator up
             if (copY > 0)
-                if (currentPitch < maxTilt)
+                if (currentPitch < maxTilt - angleDelta)
                     setActuatorDirection(ACTUATOR_TWO, UP);
                 else
                     setActuatorDirection(ACTUATOR_TWO, OFF);
                 end
             else
-                if (currentPitch > -maxTilt)
+                if (currentPitch > -maxTilt + angleDelta)
                     setActuatorDirection(ACTUATOR_TWO, DOWN);
                 else
                     setActuatorDirection(ACTUATOR_TWO, OFF);
@@ -119,9 +133,14 @@ while ~strcmp(modeSelected, 'QUIT')
         else
             % If user is in OK zone, begin to level board
             setTilt(0, 0, currentPitch, currentRoll);
+            %setActuatorDirection(ACTUATOR_ONE, OFF);
+            %setActuatorDirection(ACTUATOR_TWO, OFF);
         end
     elseif strcmp(modeSelected, 'ADAPTIVE')
-        % Generate new circle if too close to center?
+        % Continuously add to variances
+        copXVariance = copXVariance + (100 * copX * 100 * copX);
+        copYVariance = copYVariance + (100 * copY * 100 * copY);
+        numSamples = numSamples + 1;
         
         % adaptiveFirstTime set to true when start button for adaptive mode
         % is pressed
@@ -163,7 +182,12 @@ while ~strcmp(modeSelected, 'QUIT')
         if settingTilt
             settingTilt = ~setTilt(0, 0, currentPitch, currentRoll);
         else
-            modeSelected = 'OFF';
+            % Make sure we didn't overshoot 0 pitch and 0 roll
+            if currentPitch ~= 0 && currentRoll ~= 0
+                modeSelected = 'LEVEL_BOARD';
+            else
+                modeSelected = 'OFF';
+            end
         end
     end
     
@@ -173,7 +197,8 @@ while ~strcmp(modeSelected, 'QUIT')
 end
 
 % Level board after the quit button is pressed
-setSpeed(50);
+setSpeed(40);
+angleDelta = 0;
 settingTilt = true;
 while settingTilt
     [currentPitch, currentRoll] = getTilt();

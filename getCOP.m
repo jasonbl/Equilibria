@@ -1,4 +1,4 @@
-function [copX, copY] = getCOP()
+function [copX, copY, totalWeight] = getCOP()
 
 global boardWidth boardHeight READ_COP readArduino
 

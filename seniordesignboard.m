@@ -22,7 +22,7 @@ function varargout = seniordesignboard(varargin)
 
 % Edit the above text to modify the response to help seniordesignboard
 
-% Last Modified by GUIDE v2.5 26-Mar-2017 17:13:13
+% Last Modified by GUIDE v2.5 01-Apr-2017 23:57:49
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,9 +54,15 @@ function seniordesignboard_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for seniordesignboard
 handles.output = hObject;
 
-global copPlotHandle boardWidth boardHeight
+global copPlotHandle boardWidth boardHeight copXField copYField pitchField...
+    rollField weightField
 
 copPlotHandle = handles.COP_Plot;
+copXField = handles.copXField;
+copYField = handles.copYField;
+pitchField = handles.pitchField;
+rollField = handles.rollField;
+weightField = handles.weightField;
 % if (~isempty(copPlotHandle))
 %     disp('Found plot');
 % end
@@ -98,14 +104,22 @@ function start_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-global modeSelected modeIsStarted percentSpeed maxTilt adaptiveFirstTime
+global modeSelected modeIsStarted percentSpeed maxTilt adaptiveFirstTime...
+    copXVariance copYVariance numSamples ACTUATOR_ONE ACTUATOR_TWO OFF...
+    settingTilt
 
 if ~modeIsStarted
+    % Initialize COP variances and numSamples for stability index
+    % calculations
+    copXVariance = 0;
+    copYVariance = 0;
+    numSamples = 0;
+    
     h = get(handles.modeSelectionButtonGroup, 'SelectedObject');
     selection = get(h, 'Tag');
     %disp(selection);
     
-    prompt = {'Enter the desired percent speed of the board (as an integer between 0 and 100):',
+    prompt = {'Enter the desired percent speed of the board (as an integer between 25 and 100):',
         'Enter the desired maximum degree of tilt of the board (as an integer between 0 and 15):'};
     % CHANGE RANGE OF MAX TILT MAYBE? (raise lower bound)
     dlg_title = 'Difficulty Input';
@@ -116,8 +130,8 @@ if ~modeIsStarted
     % Check for invalid inputs
     input1 = floor(str2double(answer{1}));
     input2 = floor(str2double(answer{2}));
-    if (input1 < 0 || input1 > 100)
-        msgbox('Invalid speed input. Please input an integer between 0 and 100', ...
+    if (input1 < 25 || input1 > 100)
+        msgbox('Invalid speed input. Please input an integer between 25 and 100', ...
             'Invalid Speed');
         return;
     end
@@ -133,6 +147,7 @@ if ~modeIsStarted
     
     % Set new speed of actuators
     setSpeed(percentSpeed);
+    setAngleDelta(percentSpeed);
     
     if strcmp(selection, 'reactiveButton')
         modeSelected = 'REACTIVE';
@@ -145,9 +160,21 @@ if ~modeIsStarted
     modeIsStarted = true;
 else
     modeSelected = 'OFF';
+    setActuatorDirection(ACTUATOR_ONE, OFF);
+    setActuatorDirection(ACTUATOR_TWO, OFF);
+    settingTilt = false;
     set(handles.start, 'String', 'Start');
     set(handles.start, 'BackgroundColor', [.73 .83 .96]);
     modeIsStarted = false;
+    
+    % Calculate stability indexes and display to user
+    APSI = sqrt(copYVariance / numSamples);
+    MLSI = sqrt(copXVariance / numSamples);
+    OSI = sqrt((copXVariance + copYVariance) / numSamples);
+    msgbox(sprintf('%s\n\nAPSI: %.1f cm\nMLSI: %.1f cm\n OSI: %.1f cm', ...
+        'For more information about stability index, please see the Help button above.',...
+        APSI, MLSI, OSI),...
+        'Stability Index Information');
 end
 
 % --- Executes on button press in levelBoard.
@@ -156,14 +183,15 @@ function levelBoard_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-global modeSelected modeIsStarted settingTilt
+global modeSelected modeIsStarted settingTilt angleDelta
 
 if modeIsStarted
     % Tell user that board can't be leveled while mode is in progress
     msgbox('Error: the board cannot be leveled while a mode is in progress', ...
         'Levelling Error');
 else
-    setSpeed(50); % Set speed to 50%
+    setSpeed(40); % Set speed to 40%
+    angleDelta = 0;
     settingTilt = true;
     modeSelected = 'LEVEL_BOARD';
 end
@@ -184,22 +212,8 @@ function helpMenu_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 % Don't delete
 function equilibriaGUI_WindowButtonDownFcn(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
-function edit2_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 
 % --- Executes when user attempts to close equilibriaGUI.
 function equilibriaGUI_CloseRequestFcn(hObject, eventdata, handles)
@@ -209,3 +223,41 @@ function equilibriaGUI_CloseRequestFcn(hObject, eventdata, handles)
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+
+
+% --------------------------------------------------------------------
+function aboutEquilibria_Callback(hObject, eventdata, handles)
+% hObject    handle to aboutEquilibria (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+msgbox('FILL ME IN', 'About Equilibria');
+
+% --------------------------------------------------------------------
+function stabilityIndex_Callback(hObject, eventdata, handles)
+% hObject    handle to stabilityIndex (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+msgbox('FILL ME IN', 'Stability Index');
+
+
+% --- Executes on button press in decreaseZoneSize.
+function decreaseZoneSize_Callback(hObject, eventdata, handles)
+% hObject    handle to decreaseZoneSize (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global zoneRadius zoneHandle
+if zoneRadius - .01 > 0
+    zoneRadius = zoneRadius - .01;
+end
+set(zoneHandle, 'Position', [-zoneRadius -zoneRadius 2*zoneRadius 2*zoneRadius]);
+
+% --- Executes on button press in increaseZoneSize.
+function increaseZoneSize_Callback(hObject, eventdata, handles)
+% hObject    handle to increaseZoneSize (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global zoneRadius zoneHandle
+if zoneRadius < .1
+    zoneRadius = zoneRadius + .01;
+end
+set(zoneHandle, 'Position', [-zoneRadius -zoneRadius 2*zoneRadius 2*zoneRadius]);

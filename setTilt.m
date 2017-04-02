@@ -1,12 +1,10 @@
 function tiltIsSet = setTilt(desiredPitch, desiredRoll, currentPitch, currentRoll)
 
-global ACTUATOR_ONE ACTUATOR_TWO OFF UP DOWN
-
-delta = 2; % Variable to establish range of OK tilts board can be in
+global ACTUATOR_ONE ACTUATOR_TWO OFF UP DOWN angleDelta
 
 % Check if roll needs to be altered (controlled by actuator one)
 rollIsSet = false;
-if abs(currentRoll - desiredRoll) > delta
+if abs(currentRoll - desiredRoll) > angleDelta
     
     % MIGHT NEED TO CHANGE THIS DEPENDING ON ACCELEROMETER MOUNTING
     if currentRoll < desiredRoll
@@ -25,7 +23,7 @@ end
 
 % Check if pitch needs to be altered (controlled by actuator two)
 pitchIsSet = false;
-if abs(currentPitch - desiredPitch) > delta
+if abs(currentPitch - desiredPitch) > angleDelta
     if currentPitch < desiredPitch
         % Increase pitch angle closer to desiredPitch
         setActuatorDirection(ACTUATOR_TWO, UP);
